@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+     <title>Decentralized Peer To Peer Payment</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4"
+        crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='style.css')}}">
+
+</head>
+
+<body>
+    {% raw %}
+    <div id="app">
+        <div class="container-fluid">
+            <div class="row mb-5">
+                <div class="col" style="text-align: center">
+                    <i class="fa fa-adn fa-4x" style="padding-top: 15px;"></i>
+                    <p><strong style="font-size: 35px;"><b>ADCOIN</b></strong></p>
+                </div>
+            </div>
+            <hr>
+            <div class="row mb-2">
+                <div class="col">
+                    <ul class="nav nav-pills justify-content-center">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">Blockchain</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-dark active" href="/network">Peer-to-Peer Network</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+             <div v-if="error" class="badge badge-warning" role="alert">
+                {{ error }}
+            </div>
+            <div v-if="success" class="alert alert-success" role="alert">
+                {{ success }}
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col">
+                    <form @submit.prevent="onAddNode">
+                        <div class="form-group">
+                            <label for="node-url"><b>Peer Node Address</b></label>
+                            <input v-model="newNodeUrl" type="text" class="form-control" id="node-url" placeholder="ip_address:port">
+                        </div>
+                        <button :disabled="newNodeUrl.trim() === ''" type="submit" class="btn btn-dark">Add Node</button>
+                    </form>
+                </div>
+            </div>
+            <hr>
+            <div class="row my-3">
+                <div class="col">
+                    <button class="btn btn-dark" @click="onLoadNodes">Show Peer Nodes</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <ul class="list-group">
+                        <button 
+                            v-for="node in nodes"
+                            style="cursor: pointer;" 
+                            class="list-group-item list-group-item-action" 
+                            @click="onRemoveNode(node)">
+                            <b>{{ node }}</b> (click to delete node from network)
+                        </button>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endraw %}
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                nodes: [],
+                newNodeUrl: '',
+                error: null,
+                success: null
+            },
+            methods: {
+                onAddNode: function() {
+                    // Add node as peer node to local node server
+                    var vm = this;
+                    axios.post("/node",{
+                        "node": this.newNodeUrl
+                    })
+                         .then(function (response) {
+                            vm.success = "Stored Node successfully.";
+                            vm.error = null;
+                            vm.nodes = response.data.all_nodes;
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                        })
+                },
+                onLoadNodes: function() {
+                    // Load all peer nodes of the local node server
+                    var vm  = this;
+                    axios.get("/nodes")
+                        .then(function (response) {
+                            vm.success = "Fetched nodes successfully.";
+                            vm.error = null;
+                            vm.nodes = response.data.all_nodes;
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                        })
+                },
+                onRemoveNode: function(node_url) {
+                    // Remove node as a peer node
+                    var vm = this;
+                    axios.delete("/node/" + node_url)
+                        .then(function (response) {
+                            vm.success = "Deleted node successfully.";
+                            vm.error = null;
+                            vm.nodes = response.data.all_nodes;
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                        })
+
+                }
+            },
+            mounted: function() {
+                    // Load all peer nodes of the local node server
+                    var vm  = this;
+                    axios.get("/nodes")
+                        .then(function (response) {
+                            vm.success = "Fetched nodes successfully.";
+                            vm.error = null;
+                            vm.nodes = response.data.all_nodes;
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                        })
+                }
+        })
+    </script>
+</body>
+
+</html>

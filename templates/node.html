@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Decentralized Peer To Peer Payment</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4"
+        crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='style.css')}}">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+
+
+</head>
+
+<body>
+    {% raw %}
+    <div id="app">
+        <div class="container-fluid">
+            <div class="row mb-5">
+                <div class="col" style="text-align: center">
+                    <i class="fa fa-adn fa-4x" style="padding-top: 15px; padding-right: 8px;"></i>
+                    <p><strong style="font-size: 35px;"><b>ADCOIN</b></strong></p>
+                </div>
+            </div>
+             <hr>
+            <div v-if="!wallet" class="row">
+                <div class="col">
+                    <div class="alert alert-warning">Create or Load a Wallet to start sending coins or to mine coins!</div>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col">
+                    <ul class="nav nav-pills justify-content-center">
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-dark active" href="/">Blockchain</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/network">Peer-to-Peer Network</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div v-if="error" class="alert alert-danger" role="alert">
+                <span class="badge badge-danger">Warning</span>
+                {{ error }}
+            </div>
+            <div v-if="success" class="alert alert-success" role="alert">
+                <span class="badge badge-success">Success</span>
+                 {{ success }}
+            </div>
+
+            <form v-if="showKeys">
+                  <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"><b>Wallet Public Key :</b></label>
+                    <div class="col-sm-10">
+                      <input type="text" readonly class="form-control-plaintext" v-bind:value="wallet.public_key">
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <label class="col-sm-2 col-form-label"><b>Wallet Private Key :</b></label>
+                    <div class="col-sm-10">
+                      <input type="text" readonly class="form-control-plaintext" v-bind:value="wallet.private_key">
+                    </div>
+                  </div>
+            </form>
+            <hr>
+
+            <div class="row">
+                <div class="col">
+                    <div v-if="!walletLoading" >
+                        <button class="btn btn-dark" @click="onCreateWallet" data-toggle="tooltip" data-placement="top" title="Create New Wallet">
+                            Create New Wallet
+                        </button>
+                        <button class="btn btn-dark" @click="onLoadWallet" data-toggle="tooltip" data-placement="top" title="Load Wallet">
+                            Load Existing Wallet
+                        </button>
+                        <button class="btn btn-dark" data-toggle="modal" data-target="#delModal" data-toggle="tooltip" data-placement="top" title="Delete Wallet permanently">Delete Wallet</button>
+                        <div class="modal fade" id="delModal" role="dialog">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h4 class="modal-title">ALERT</h4>
+                                        <button class="close" data-dismiss="modal" @click="">&times;</button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Make sure you have the backup of your wallet keys before you delete your wallet.Are u sure your want to delete ?</p>
+
+                                    </div>
+                                    <div class="modal-footer">
+
+                                        <button class="btn btn-danger" data-dismiss="modal" @click="onDelete">Confirm and Delete</button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div v-if="walletLoading" class="lds-ring">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </div>
+                <div class="col text-right">
+                    <h2><b>Balance: {{ funds.toFixed(2) }}</b></h2>
+                </div>
+                <button v-if="!balanceLoading" :disabled="wallet==null" class="btn btn-sm btn-outline-dark" @click="updateFunds" style="margin-right: 20px;"> Refresh</button>
+                <div v-if="balanceLoading" class="lds-ring">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                </div>
+
+            </div>
+
+            <div v-if="wallet" class="row mt-5">
+                <div class="col">
+                    <form @submit.prevent="onSendTx">
+                        <div class="form-group">
+                            <label for="recipient"><b>Recipient Key</b></label>
+                            <input v-model="outgoingTx.recipient" type="text" class="form-control" id="recipient" placeholder="Enter Recipient key">
+                        </div>
+                        <div class="form-group">
+                            <label for="amount"><b>Amount of Coins</b></label>
+                            <input v-model.number="outgoingTx.amount" type="number" step="0.01"  class="form-control" id="amount">
+                            <small class="form-text text-muted"><b><i>Fractions are possible (e.g. 2.36)</i></b></small>
+                        </div>
+                        <div v-if="txLoading" class="lds-ring">
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                        </div>
+                     <button :disabled="txLoading || outgoingTx.recipient.trim() === '' || outgoingTx.amount <= 0 || outgoingTx.recipient==wallet.public_key" type="submit" class="btn btn-dark" style="display: inline-block;float: left">Send Coins</button>
+
+                    </form>
+                    <!--Scanning QR CODE -->
+                      <button type="button" class="btn btn-dark" data-toggle="modal" data-target="#myModal" @click="qrLoading=true" style="display: inline-block;float: left;margin-left: 15px;">Scan QR Code</button>
+                        <div class="modal fade" id="myModal" role="dialog">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h4 class="modal-title">Scan QR CODE to send ADCOIN</h4>
+                                        <button class="close" data-dismiss="modal" @click="qrLoading=true">&times;</button>
+                                    </div>
+                                    <div class="modal-body">
+
+                                         <form v-if="!qrLoading">
+                                             <p>Detail of transaction data </p>
+                                              <div class="form-group row">
+                                                <label class="col-sm-4 col-form-label">Public Key </label>
+                                                <div class="col-sm-8">
+                                                  <input type="text" readonly class="form-control-plaintext" v-bind:value="qr_Tx.recipient">
+                                                </div>
+                                              </div>
+                                              <div class="form-group row">
+                                                <label class="col-sm-4 col-form-label">Amount </label>
+                                                <div class="col-sm-8">
+                                                  <input type="text" readonly class="form-control-plaintext" v-bind:value="qr_Tx.amount">
+                                                </div>
+                                              </div>
+                                        </form>
+
+                                        <div v-if="qrLoading">
+                                            <input type="file" @change="onFileChanged">
+                                            <button class="btn btn-success" @click="onScan" style="margin-left: 40px;">Scan QR code</button>
+                                        </div>
+
+
+
+                                        <div v-if="qrLoading && qrLoad" class="lds-ring" style="margin-left: 180px;">
+                                            Scanning<div></div>
+                                            <div></div>
+                                            <div></div>
+                                            <div></div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+
+                                        <button :disabled="qr_Tx.recipient.trim() === '' || qr_Tx.amount <= 0 || qr_Tx.recipient==wallet.public_key" class="btn btn-success" data-dismiss="modal" @click="onSend">Send Coins</button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    <!--Generate qr code -->
+                        <button type="button" class="btn btn-dark" data-toggle="modal" data-target="#qrModal"  style="display: inline-block;float: left;margin-left: 15px;">Generate QR Code</button>
+                        <div class="modal fade" id="qrModal" role="dialog">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h4 class="modal-title">Generate QR CODE </h4>
+                                        <button class="close" data-dismiss="modal" @click="qrLoading=true">&times;</button>
+                                    </div>
+                                    <div class="modal-body">
+
+                                         <form v-if="qrGenerating">
+                                             <p>Enter amount of coins you want to receive</p>
+                                              <div class="form-group row">
+                                                <label class="col-sm-4 col-form-label">Amount</label>
+                                                <div class="col-sm-8">
+                                                   <input type="number" step="0.01" class="form-control" placeholder="Enter the amount" v-model.number="qr_amount">
+                                                </div>
+                                              </div>
+                                        </form>
+
+                                        <button v-if="qrGenerating" :disabled="qr_amount<=0" class="btn btn-success"  @click="createQr">Generate</button>
+
+                                        <div v-if="!qrGenerating && qrProgress" class="lds-ring" style="margin-left: 180px;">
+                                            Generating<div></div>
+                                            <div></div>
+                                            <div></div>
+                                            <div></div>
+                                        </div>
+
+                                        <div>
+                                            <p class="badge badge-success" v-if="!qrGenerating && !qrProgress">QR code generated successfully. Share the QR code with others to receive ADCOINS</p>
+
+                                        </div>
+
+                                        <a :href="image" target="_blank"><img v-if="!qrGenerating && !qrProgress" :src="image" alt="QR CODE" width="200px" height="200px" style="margin-left: 140px;" data-toggle="tooltip" data-placement="top" title="Click to open in new tab"></a>
+
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn btn-danger" data-dismiss="modal" @click="onExit">Exit</button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                </div>
+
+
+
+
+            </div>
+
+
+
+            <hr>
+            <div class="row">
+                <div class="col">
+                    <ul class="nav nav-tabs justify-content-center">
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{active: view === 'chain'}" href="#" @click="view = 'chain'">Mining</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" :class="{active: view === 'tx'}" href="#" @click="view = 'tx'">Mempool</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="row my-3">
+                <div class="col text-center">
+                    <button :disabled="wallet==null" class="btn btn-secondary" @click="onLoadData">{{ view === 'chain' ? 'Load Blockchain' : 'Load Transactions' }}</button>
+                    <button v-if="view === 'chain' && wallet" class="btn btn-secondary" @click="onMine">Mine Coins</button>
+                    <button :disabled="wallet==null" class="btn btn-secondary" @click="onResolve">Achieve Consensus</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div v-if="dataLoading" class="lds-ring">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                    <div v-if="!dataLoading && chainLoad" class="accordion">
+                        <div class="card" v-for="(data, index) in loadedData">
+                            <div v-if="view === 'chain'" class="card-header">
+                                <h5 class="mb-0">
+                                    <button class="btn btn-light" type="button" @click="showElement === index ? showElement = null : showElement = index">
+                                        <b>Block #{{ data.index }}</b>
+                                    </button>
+                                </h5>
+                            </div>
+                            <div v-if="view === 'chain'" class="collapse" :class="{show: showElement === index}">
+                                <div class="card-body">
+                                    <p><b>Previous Hash:</b> {{ data.previous_hash }}</p>
+                                    <p><b>Proof of Work:</b> {{ data.proof}}</p>
+                                    <p><b>Timestamp:</b> {{ data.timestamp}}</p>
+                                    <p><b>Transactions:</b> </p>
+                                    <div class="list-group">
+                                        <div v-for="tx in data.transactions" class="list-group-item flex-column align-items-start">
+                                            <div><b>Sender:</b> {{ tx.sender }}</div>
+                                            <div><b>Recipient:</b> {{ tx.recipient }}</div>
+                                            <div><b>Amount:</b> {{ tx.amount }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="view === 'tx'" class="card-header">
+                                <h5 class="mb-0">
+                                    <button class="btn btn-light" type="button" @click="showElement === index ? showElement = null : showElement = index">
+                                        <b>Transaction #{{ index }}</b>
+                                    </button>
+                                </h5>
+                            </div>
+                            <div v-if="view === 'tx'" class="collapse" :class="{show: showElement === index}">
+                                <div class="card-body">
+                                    <div class="list-group">
+                                        <div class="list-group-item flex-column align-items-start">
+                                            <div><b>Sender:</b> {{ data.sender }}</div>
+                                            <div><b>Recipient:</b> {{ data.recipient }}</div>
+                                            <div><b>Amount:</b> {{ data.amount }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endraw %}
+
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                blockchain: [
+
+                ],
+                openTransactions: [
+
+                ],
+                qr_amount: null,
+                image: "",
+                showKeys: null,
+                wallet: null,
+                view: 'chain',
+                qrLoading: true,
+                walletLoading: false,
+                txLoading: false,
+                dataLoading: false,
+                balanceLoading: false,
+                qrGenerating: true,
+                showElement: null,
+                qrProgress: false,
+                qrLoad: false,
+                chainLoad: true,
+                chooseFile: true,
+                error: null,
+                success: null,
+                funds: 0,
+                selectedFile: null,
+                qr_Tx: {
+                    recipient: '',
+                    amount: 0
+                },
+                outgoingTx: {
+                    recipient: '',
+                    amount: 0
+                }
+            },
+            computed: {
+                loadedData: function () {
+                    if (this.view === 'chain') {
+                        return this.blockchain;
+                    } else {
+                        return this.openTransactions
+                    }
+                }
+            },
+            methods: {
+                onDelete:function(){
+                    var vm =this;
+                    axios.delete("/wallet")
+                        .then(function (response) {
+                            vm.error = null;
+                            console.log(response);
+                            vm.success = response.data.message;
+                            vm.wallet = null;
+                            vm.showKeys = false;
+                            vm.funds = 0;
+                            vm.chainLoad = false;
+                        })
+                        .catch(function (error) {
+                            vm.error = error.response.data.message;
+                            vm.success = null;
+                        })
+
+                },
+                onFileChanged:function(event){
+                     this.selectedFile = event.target.files[0];
+
+
+                },
+                onScan:function(){
+                    var vm =this;
+                    const formData = new FormData();
+                    formData.append('qrCode', this.selectedFile, this.selectedFile.name);
+                    this.qrLoading = true;
+                    this.chooseFile = false;
+                    this.qrLoad = true;
+                    axios.post("/upload_data",formData)
+
+                        .then(function (response) {
+                            vm.error = null;
+                            vm.success = response.data.message;
+                            vm.qr_Tx = {
+                                recipient: response.data.public_key,
+                                amount: parseFloat(response.data.amount)
+                            };
+                            vm.qrLoading = false;
+                            vm.qrLoad = false;
+
+                        })
+                        .catch(function (error) {
+                            vm.error = error.response.data.message;
+                            vm.success = null;
+                            vm.qr_Tx = {
+                                recipient: '',
+                                amount: 0
+                            };
+                            vm.qrLoading = false;
+                            vm.qrLoad = false;
+                        })
+
+                },
+                onSend: function () {
+                    // Send Transaction to backend
+                    var vm = this;
+                    this.success = "Transaction in progress please wait...";
+
+                    axios.post('/transaction', {
+                        recipient: this.qr_Tx.recipient,
+                        amount: this.qr_Tx.amount
+                    })
+                        .then(function (response) {
+                                vm.error = null;
+                                vm.success = response.data.message;
+                                vm.funds = response.data.funds;
+                                // this.qrLoading = true;
+                        })
+                        .catch(function (error) {
+                                vm.success = null;
+                                vm.error = error.response.data.message;
+                                // this.qrLoading = true;
+                        });
+                },
+                createQr:function(){
+                    var vm =this;
+                    this.qrGenerating=true;
+                    this.qrProgress=true;
+                    axios.post("/get_qr_code",{
+                        "public_key":this.wallet.public_key,
+                        "amount":this.qr_amount
+                    })
+                        .then(function (response) {
+                            vm.image = "http://" + response.data.address + ":5000/static/qr_code" + vm.qr_amount + ".png";
+                            vm.error = null;
+                            vm.qrGenerating = false;
+                            vm.qrProgress=false;
+                            vm.success = response.data.message;
+
+                        })
+                        .catch(function (error) {
+                            vm.error = "Error generating QR code";
+                            vm.success = null;
+                            vm.qrGenerating = false;
+                            vm.qrProgress=false;
+                        })
+
+                },
+                onExit:function(){
+                    this.qrGenerating=true;
+                    this.qr_amount = null;
+                    this.image = "";
+
+                },
+                updateFunds: function(){
+                    var vm = this;
+                    this.balanceLoading = true;
+                    axios.get("/balance")
+                        .then(function (response) {
+                            vm.funds = response.data.funds;
+                            vm.error = null;
+                            vm.success = response.data.message;
+                            vm.balanceLoading = false;
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                            vm.balanceLoading = false;
+                        })
+                },
+                onCreateWallet: function () {
+                    // Send Http request to create a new wallet (and return keys)
+                    var vm = this;
+                    this.walletLoading = true;
+                    axios.post('/wallet')
+                        .then(function (response) {
+                            vm.error = null;
+                            vm.success = 'Wallet Created! Keys saved in wallet.txt file.Take a backup of wallet.txt and keep the private key secret!'; //Public Key: ' + response.data.public_key + ', Private Key: ' + response.data.private_key;
+                            vm.wallet = {
+                                    public_key: response.data.public_key,
+                                    private_key: response.data.private_key
+                            };
+                            vm.showKeys = true;
+                            vm.funds = response.data.funds;
+                            vm.walletLoading = false
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                            vm.wallet = null;
+                            vm.walletLoading = false
+                        });
+
+                },
+                onLoadWallet: function () {
+                    // Send Http request to load an existing wallet (from a file on the server)
+                    var vm = this;
+                    this.walletLoading = true;
+                    axios.get('/wallet')
+                        .then(function (response) {
+                                vm.error = null;
+                                vm.success = 'Wallet Loaded!'; //Public Key: ' + response.data.public_key + ', Private Key: ' + response.data.private_key;
+                                vm.wallet = {
+                                    public_key: response.data.public_key,
+                                    private_key: response.data.private_key
+                                };
+                                vm.showKeys = true;
+                                vm.funds = response.data.funds;
+                                vm.walletLoading = false
+                            })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                            vm.wallet = null;
+                            vm.walletLoading = false
+                        });
+
+                },
+                onSendTx: function () {
+                    // Send Transaction to backend
+                    this.txLoading = true;
+                    var vm = this;
+                    axios.post('/transaction', {
+                        recipient: this.outgoingTx.recipient,
+                        amount: this.outgoingTx.amount
+                    })
+                        .then(function (response) {
+                                vm.error = null;
+                                vm.success = response.data.message;
+                                vm.funds = response.data.funds;
+                                vm.txLoading = false;
+                        })
+                        .catch(function (error) {
+                                vm.success = null;
+                                vm.error = error.response.data.message;
+                                vm.txLoading = false;
+                        });
+                },
+                onMine: function() {
+                    var vm = this;
+                    axios.post('/mine')
+                        .then(function (response) {
+                            vm.error = null;
+                            vm.success = response.data.message;
+                            vm.funds = response.data.funds;
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                        });
+                },
+                onResolve: function(){
+                    var vm = this;
+                    axios.post('/resolve-conflicts')
+                        .then(function (response) {
+                            vm.error = null;
+                            vm.success = response.data.message;
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                        });
+                },
+                onLoadData: function () {
+                    if (this.view === 'chain') {
+                        // Load blockchain data
+                        var vm = this;
+                        this.dataLoading = true;
+                        axios.get('/chain')
+                            .then(function (response) {
+                                vm.blockchain = response.data;
+                                vm.dataLoading = false
+                            })
+                            .catch(function (error) {
+                                vm.dataLoading = false;
+                                vm.error = 'Something went wrong.'
+                            })
+
+                    } else {
+                        // Load transaction data
+                        var vm = this;
+                        this.dataLoading = true;
+                        axios.get('/transactions')
+                            .then(function (response) {
+                                vm.openTransactions = response.data;
+                                vm.dataLoading = false
+                            })
+                            .catch(function (error) {
+                                vm.dataLoading = false;
+                                vm.error = 'Something went wrong.'
+                            })
+
+                    }
+                }
+            },
+            mounted: function () {
+                    // Send Http request to load an existing wallet (from a file on the server)
+                    var vm = this;
+                    this.walletLoading = true;
+                    axios.get('/wallet')
+                        .then(function (response) {
+                            vm.error = null;
+                            vm.success = 'Wallet Loaded!'; //Public Key: ' + response.data.public_key + ', Private Key: ' + response.data.private_key;
+                            vm.wallet = {
+                                public_key: response.data.public_key,
+                                private_key: response.data.private_key
+                            };
+                            vm.showKeys = true;
+                            vm.funds = response.data.funds;
+                            vm.walletLoading = false
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                            vm.wallet = null;
+                            vm.walletLoading = false
+                        });
+                }
+        })
+    </script>
+</body>
+
+</html>
