@@ -2,7 +2,7 @@
 # ADCOIN
 
 [![GitHub](https://img.shields.io/badge/--181717?logo=github&logoColor=ffffff)](https://github.com/adarshsingh26)
-[![Python](https://img.shields.io/badge/python-3.6%7C3.7%7C3.8%7C3.9-blue)](https://www.python.org/) 
+[![Python](https://img.shields.io/badge/python-3.7%7C3.8%7C3.9-blue)](https://www.python.org/) 
 [![MIT License](https://img.shields.io/badge/license-MIT-blueviolet)](https://github.com/adarshsingh26/ADCOIN/blob/master/LICENSE) 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/adarshsingh26/ADCOIN/graphs/commit-activity)
 
@@ -30,7 +30,7 @@ User can manually enter payment data or scan QRCode to make payments directly to
 - `Centralization:` An online bank is only as good as your internet connection. If there’s a power outage, or if servers go down, or if the server is attacked by some attacker you might not have any access to your account when in need. 
 - `Trust issues:` You need to trust the bank and their employees that they won’t commit any fraud and your money would be safe, there is no trust build into the system, and this is an issue as various frauds are committed.
 - `Identity Theft:` When you give your credit card to a merchant, or you share your personal information and even with the bank by trusting them you give him or her access to your full credit line, so there is a risk of fraud and identity theft.
-- `etc`
+- etc
 
 **Solution** provided:
 - Very low cost of cross border transactions than traditional banking system(**40–80% reduction in transaction costs**). [Source Delloite ppt](https://www2.deloitte.com/content/dam/Deloitte/global/Documents/grid/cross-border-payments.pdf).
@@ -58,8 +58,8 @@ A web Ui is provided, so users can interact with the system. User can
 - View wallet balance.
 - View the blockchain.
 - View the mempool.
-- Can also participate in mining.
-It is a decentralized system.Nodes are connected with each other(peer to peer connection) so there is no server involved in between.
+- Can also participate in mining. \
+It is a decentralized system. Nodes are connected with each other(peer to peer connection) so no server involved in between.
 
 
 ## Repo contents
@@ -94,7 +94,7 @@ myenv\Scripts\activate
 - Navigate to root of project
 - ``` pip install requirements.txt ```
 
-6) Now we could run the node.py to run the web app become a node on the network.
+6) Now we could run the web app and become a node on the network.
 ```
 python node.py -p 5000 (-p  is for the port no)
 ```
@@ -102,7 +102,7 @@ python node.py -p 5000 (-p  is for the port no)
 ## Overview of how the system works
 ![Blockchain](https://user-images.githubusercontent.com/84853854/133923193-ca1eda3a-785f-4322-8c22-71073b3f20da.png)
 
-1) If some person wants to send money a new `transaction` is created and it is `signed` by the user `private key` and the transaction is `broadcasted` to other nodes.
+1) If some person wants to send money a new `transaction` is created and it is signed by the user private key and the transaction is `broadcasted` to other nodes.
 
 2) The nodes on the network work together to `verify transactions` and are rewarded with the coins, a process known as `mining`.
 
@@ -110,7 +110,7 @@ python node.py -p 5000 (-p  is for the port no)
 
 4) Each node maintains a `copy` of the blockchain.
 
-5) Whichever `node` mines the block first `broadcasts` that `block` to the other nodes.
+5) Whichever node mines the block first `broadcasts` that `block` to the other nodes.
 
 6) Nodes `verify the block` and then adds it to their local blockchain.
 
@@ -120,7 +120,7 @@ python node.py -p 5000 (-p  is for the port no)
 
 9) Consensus algorithm is implemented to resolve this conflict so basically this algorithm suggest that that the `majority of nodes(>50%) that have the longest chain will win` and that blockchain will be accepted by all other nodes on the network.
 
-`Note:` As I am building a cryptocurrency the data stored inside the blockchain is transaction, but it could be `any kind of data` as per your application needs.
+`Note:` As I am building a cryptocurrency the data stored inside the blockchain is transaction, but it could be any kind of data as per your application needs.
 
 ## Tests
 | Test id  | Test Description  | Test Steps | Results
