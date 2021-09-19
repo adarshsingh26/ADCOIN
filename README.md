@@ -136,4 +136,4 @@ python node.py -p 5000 (-p  is for the port no)
 | `9` | Scan QR Code | Scanning invalid QR code  | Operation **not allowed**
 | `10` | Scan QR Code | Scanning valid QR code  | Operation **allowed**
 
-``` HTTP API Endpoints were tested using Postman Tool ```
+``` HTTP API Endpoints in node.py were tested using Postman Tool ```
